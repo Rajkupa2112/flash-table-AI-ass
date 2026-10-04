@@ -1,0 +1,712 @@
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flash Table Assistant & Game</title>
+    <style>
+        /* Shared Brand Theme Variables */
+        :root {
+            --primary-color: #1a4a42; 
+            --primary-hover: #266359;
+            --bg-light: #f4f5f5;
+            --chat-panel-bg: #ffffff;
+            --bot-bubble-bg: #f0f2f1;
+            --text-main: #2d3748;
+            --text-light: #ffffff;
+            --border-color: #e2e8f0;
+
+            /* Game Specific */
+            --available: #e2e8f0;
+            --geofenced: #ff9800; 
+            --vip: #9c27b0;       
+            --prepping: #03a9f4;  
+            --dining: #212121;    
+            --angry: #f44336;     
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* --- CONTAINER SIZING --- */
+        .app-window {
+            width: 420px;
+            background: var(--chat-panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        /* =========================================
+           CHAT VIEW STYLES
+           ========================================= */
+        #chatView {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background-color: var(--primary-color);
+            color: var(--text-light);
+            padding: 18px;
+            text-align: center;
+            font-size: 1.15em;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .chat-box {
+            height: 380px;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chat-box::-webkit-scrollbar { width: 6px; }
+        .chat-box::-webkit-scrollbar-thumb { background-color: #cbd5e0; border-radius: 10px; }
+
+        .message {
+            max-width: 82%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.95em;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .bot-message {
+            background-color: var(--bot-bubble-bg);
+            color: var(--text-main);
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+
+        .user-message {
+            background-color: var(--primary-color);
+            color: var(--text-light);
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+            box-shadow: 0 2px 5px rgba(26, 74, 66, 0.2);
+        }
+
+        .chat-input-area {
+            display: flex;
+            padding: 15px;
+            background: var(--chat-panel-bg);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            outline: none;
+            font-size: 0.95em;
+            background-color: #f8fafc;
+            transition: border 0.2s;
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary-color);
+            background-color: #ffffff;
+        }
+
+        .send-btn {
+            background-color: var(--primary-color);
+            color: var(--text-light);
+            border: none;
+            padding: 12px 20px;
+            margin-left: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        .send-btn:hover { background-color: var(--primary-hover); }
+
+        .launch-game-btn {
+            width: 100%;
+            margin-top: 10px;
+            margin-left: 0;
+            background-color: var(--geofenced);
+        }
+        .launch-game-btn:hover { background-color: #e68a00; }
+
+        /* =========================================
+           GAME VIEW STYLES
+           ========================================= */
+        #gameView {
+            display: none;
+            padding: 20px;
+            text-align: center;
+            height: 480px;
+            position: relative;
+            user-select: none;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .game-header h1 {
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 1.4em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .close-game-btn {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 0.9em;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        .subtitle {
+            color: var(--angry);
+            font-weight: bold;
+            font-size: 0.85em;
+            margin-bottom: 15px;
+        }
+
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--primary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .combo-meter {
+            font-size: 0.8em;
+            color: #ffd700;
+            transition: transform 0.1s;
+        }
+
+        .floor {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .table {
+            background-color: var(--available);
+            height: 75px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.5em;
+            cursor: pointer;
+            position: relative;
+            box-shadow: inset 0 -4px 0 rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.1);
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .table::before { 
+            content: ''; position: absolute; width: 115%; height: 115%;
+            border: 3px dashed rgba(0,0,0,0.06); border-radius: 50%; z-index: -1;
+        }
+        .table:active { transform: scale(0.9); }
+
+        .geofenced { background-color: var(--geofenced); color: white; animation: pulse-orange 0.8s infinite; }
+        .vip { background-color: var(--vip); color: white; animation: wobble 0.3s infinite; }
+        .prepping { background-color: var(--prepping); color: white; cursor: not-allowed; transform: scale(0.95); }
+        .dining { background-color: var(--dining); color: white; cursor: not-allowed; }
+        .angry { background-color: var(--angry); color: white; animation: shake 0.4s; cursor: not-allowed; }
+        .error-click { animation: shake 0.3s; background-color: #ffcdd2; }
+
+        @keyframes pulse-orange {
+            0% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 152, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0); }
+        }
+        @keyframes wobble {
+            0%, 100% { transform: rotate(-5deg) scale(1.05); }
+            50% { transform: rotate(5deg) scale(1.05); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-30px) scale(1.5); }
+        }
+
+        .floating-text {
+            position: absolute; font-weight: bold; font-size: 1.1em;
+            color: var(--primary-color); pointer-events: none;
+            animation: floatUp 0.8s forwards; z-index: 10;
+        }
+
+        .game-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.95);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            border-radius: 12px; z-index: 20;
+        }
+        .game-overlay h2 { font-size: 2em; color: var(--primary-color); margin-bottom: 5px; }
+        .game-overlay h3 { font-size: 2em; color: var(--angry); margin: 0; }
+        .game-overlay p { font-size: 1.1em; color: #333; margin-bottom: 20px; text-align: center; padding: 0 15px;}
+        
+        .game-btn {
+            background-color: var(--primary-color); color: white; border: none;
+            padding: 12px 25px; font-size: 1.1em; border-radius: 8px; cursor: pointer;
+            font-weight: bold; width: 80%; text-transform: uppercase; margin-bottom: 10px;
+        }
+        .game-btn:hover { background-color: var(--primary-hover); transform: translateY(-2px); transition: 0.2s;}
+
+        .rush-hour { animation: rushAlert 0.8s infinite; }
+        @keyframes rushAlert {
+            0% { background-color: #ffffff; }
+            50% { background-color: #ffebee; }
+            100% { background-color: #ffffff; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-window" id="appWindow">
+        
+        <!-- =========================================
+             CHAT INTERFACE 
+             ========================================= -->
+        <div id="chatView">
+            <div class="chat-header">Flash Table Assistant</div>
+            <div class="chat-box" id="chatBox">
+                <div class="message bot-message">
+                    Hello! I'm the Flash Table Assistant. I can help you with: <br><br>
+                    1️⃣ Reserving a specific table <br>
+                    2️⃣ Pre-ordering food <br>
+                    3️⃣ Explaining the Smart Arrival feature <br>
+                    4️⃣ Restaurant owner tools <br><br>
+                    How can I assist you today?<br><br>
+                    <strong>📞 For more details, contact: 9611968997</strong><br><br>
+                    <em>Tip: Type "Play a game" if you're bored!</em>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="userInput" class="chat-input" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
+                <button class="send-btn" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+
+        <!-- =========================================
+             GAME INTERFACE 
+             ========================================= -->
+        <div id="gameView">
+            <div class="game-header">
+                <h1>Kitchen Rush</h1>
+                <button class="close-game-btn" onclick="closeGame()">Return to Chat</button>
+            </div>
+            <div class="subtitle" id="modeSubtitle">Select your difficulty!</div>
+
+            <div class="hud">
+                <div>⭐ <span id="score">0</span></div>
+                <div class="combo-meter" id="comboMeter">Combo x1</div>
+                <div>❤️ <span id="lives">3</span></div>
+            </div>
+
+            <div class="floor" id="floor">
+                <!-- Tables injected by JS -->
+            </div>
+
+            <div id="startScreen" class="game-overlay">
+                <h2>Select Difficulty</h2>
+                <p>Geofence triggered! Prep the food before the customers arrive.</p>
+                <button class="game-btn" onclick="startKitchenRush('easy')" style="background-color: #4caf50;">Easy</button>
+                <button class="game-btn" onclick="startKitchenRush('medium')" style="background-color: #ff9800;">Medium</button>
+                <button class="game-btn" onclick="startKitchenRush('hard')" style="background-color: #f44336;">Hard</button>
+            </div>
+
+            <div id="gameOverScreen" class="game-overlay" style="display: none;">
+                <h3>SERVICE OVER</h3>
+                <p>Final Score: <strong id="finalScore">0</strong></p>
+                <button class="game-btn" onclick="showDifficultyScreen()">Play Again</button>
+                <button class="game-btn" onclick="closeGame()" style="background-color: #64748b;">Back to Chat</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /* =========================================
+           CHAT LOGIC
+           ========================================= */
+        const flashTableKnowledge = {
+            greetings: ["hello", "hi", "hey", "good morning", "good evening", "hlo", "hlw", "helo"],
+            features: {
+                booking: "You can book an exact table using our interactive 2D floor plan. It shows you the layout and seating styles so you can choose your preferred ambiance.",
+                pre_order: "Flash Table allows you to pre-order food along with your reservation. The kitchen gets the order in advance and starts preparing it right on time.",
+                smart_arrival: "Our Smart Arrival feature uses geofencing. As you get closer to the restaurant, it triggers the kitchen to start preparing your food so it's ready when you arrive.",
+                owner_tools: "For restaurant owners, Flash Table provides a Live Table view to monitor occupancy, a Kitchen Display System (KDS) for pre-orders, and tools to manage menus and stock."
+            },
+            troubleshooting: {
+                meal_issue: "If you are unable to book your meals or add food, please ensure you have selected a table first. If a specific item is missing, the restaurant may have marked it as out of stock.",
+                booking_issue: "If you are unable to book a table, please ensure you have selected a valid date and time. Also, check the 3D floor plan to ensure the table is marked Green (Available). Tables marked Orange are reserved, and Black means occupied.",
+                menu_issue: "If the menu isn't showing, please make sure you have selected a specific restaurant first. If it is still blank, the restaurant owner may not have uploaded their menu items or marked their items as out of stock.",
+                reservation_issue: "If your reservation is not showing, please navigate to the 'My Reservations' section in the app. Also, make sure you completed the initial deposit step.",
+                payment_sync_issue: "If your payment or deposit is not showing, it might take a moment to sync. Please refresh the page. If the amount was deducted but the reservation isn't confirmed, please contact our support at 9611968997.",
+                payment_issue: "If you are unable to pay the deposit amount, please check your internet connection or try a different payment method."
+            },
+            default: "I'm not sure I understand. You can ask me about table reservations, food pre-ordering, the Smart Arrival feature, troubleshooting issues, or tools for restaurant owners. <br><br><strong>📞 For more details, contact: 9611968997</strong>"
+        };
+
+        function addMessage(text, sender) {
+            const chatBox = document.getElementById("chatBox");
+            const messageDiv = document.createElement("div");
+            messageDiv.classList.add("message");
+            messageDiv.classList.add(sender === "user" ? "user-message" : "bot-message");
+            messageDiv.innerHTML = text;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function getBotResponse(input) {
+            let lowerInput = input.toLowerCase();
+
+            // Check for Game Trigger
+            if (lowerInput.includes("game") || lowerInput.includes("play") || lowerInput.includes("kitchen rush") || lowerInput.includes("bored")) {
+                return `<strong>Ready for a challenge?</strong> Can you handle the dinner rush using the Flash Table geofencing system? <br>
+                        <button onclick="openGame()" class="send-btn launch-game-btn">🎮 Play Kitchen Rush</button>`;
+            }
+
+            // Troubleshooting
+            if ((lowerInput.includes("not able to book") || lowerInput.includes("cannot book") || lowerInput.includes("can't book") || lowerInput.includes("unable to book") || lowerInput.includes("booking failed")) && (lowerInput.includes("meal") || lowerInput.includes("food") || lowerInput.includes("dish"))) {
+                return flashTableKnowledge.troubleshooting.meal_issue;
+            }
+            if (lowerInput.includes("not able to book") || lowerInput.includes("cannot book") || lowerInput.includes("can't book") || lowerInput.includes("unable to book") || lowerInput.includes("booking failed")) {
+                return flashTableKnowledge.troubleshooting.booking_issue;
+            } 
+            if ((lowerInput.includes("not showing") && lowerInput.includes("menu")) || lowerInput.includes("menu not visible") || lowerInput.includes("where is the menu") || lowerInput.includes("no menu")) {
+                return flashTableKnowledge.troubleshooting.menu_issue;
+            } 
+            if (lowerInput.includes("reservation is not showing") || lowerInput.includes("can't find my reservation") || lowerInput.includes("where is my reservation") || (lowerInput.includes("reservation") && (lowerInput.includes("not showing") || lowerInput.includes("missing")))) {
+                return flashTableKnowledge.troubleshooting.reservation_issue;
+            }
+            if ((lowerInput.includes("not showing") || lowerInput.includes("not visible") || lowerInput.includes("not updating")) && (lowerInput.includes("payment") || lowerInput.includes("deposit") || lowerInput.includes("money") || lowerInput.includes("pay"))) {
+                return flashTableKnowledge.troubleshooting.payment_sync_issue;
+            }
+            if (lowerInput.includes("pay") || lowerInput.includes("payment") || lowerInput.includes("amount") || lowerInput.includes("deposit") || lowerInput.includes("money")) {
+                return flashTableKnowledge.troubleshooting.payment_issue;
+            }
+
+            // Greetings
+            if (flashTableKnowledge.greetings.some(word => lowerInput === word || lowerInput.startsWith(word + " "))) {
+                return "Hi there! How can I help you with Flash Table today?";
+            } 
+            
+            // Features
+            if (lowerInput.includes("book") || lowerInput.includes("reserv") || lowerInput.includes("table")) {
+                return flashTableKnowledge.features.booking;
+            } 
+            if (lowerInput.includes("food") || lowerInput.includes("order") || lowerInput.includes("menu") || lowerInput.includes("meal")) {
+                return flashTableKnowledge.features.pre_order;
+            } 
+            if (lowerInput.includes("arrive") || lowerInput.includes("location") || lowerInput.includes("smart") || lowerInput.includes("geofence")) {
+                return flashTableKnowledge.features.smart_arrival;
+            } 
+            if (lowerInput.includes("owner") || lowerInput.includes("restaurant") || lowerInput.includes("manage")) {
+                return flashTableKnowledge.features.owner_tools;
+            } 
+            
+            return flashTableKnowledge.default;
+        }
+
+        function sendMessage() {
+            const userInputField = document.getElementById("userInput");
+            const userText = userInputField.value.trim();
+
+            if (userText === "") return;
+
+            addMessage(userText, "user");
+            userInputField.value = "";
+
+            setTimeout(() => {
+                const botResponse = getBotResponse(userText);
+                addMessage(botResponse, "bot");
+            }, 600);
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter") sendMessage();
+        }
+
+        /* =========================================
+           VIEW SWITCHING LOGIC
+           ========================================= */
+        function openGame() {
+            document.getElementById('chatView').style.display = 'none';
+            document.getElementById('gameView').style.display = 'block';
+            showDifficultyScreen();
+        }
+
+        function closeGame() {
+            document.getElementById('gameView').style.display = 'none';
+            document.getElementById('chatView').style.display = 'flex';
+            if (isPlaying) triggerGameOver();
+        }
+
+        function showDifficultyScreen() {
+            document.getElementById('startScreen').style.display = 'flex';
+            document.getElementById('gameOverScreen').style.display = 'none';
+        }
+
+        /* =========================================
+           KITCHEN RUSH GAME LOGIC
+           ========================================= */
+        const floor = document.getElementById('floor');
+        const scoreEl = document.getElementById('score');
+        const livesEl = document.getElementById('lives');
+        const comboEl = document.getElementById('comboMeter');
+        const appWindow = document.getElementById('appWindow'); 
+        const subtitleEl = document.getElementById('modeSubtitle');
+        
+        const prepIcons = ['🍳', '🥘', '🍲', '♨️'];
+        const foodIcons = ['🍔', '🍕', '🌮', '🍣', '🥗', '🍝', '🍜', '🍱', '🥪', '🥩', '🍗', '🥞', '🥐', '🍟', '🍰'];
+
+        let score = 0, lives = 3, combo = 1;
+        let isPlaying = false;
+        let spawnRate = 1000; 
+        let patience = 2800;  
+        let spawnInterval;
+        let timers = {};
+        
+        // Difficulty settings
+        let currentDifficulty = 'medium';
+        let misclickPenalty = false;
+
+        for(let i=0; i<9; i++) {
+            let t = document.createElement('div');
+            t.className = 'table';
+            t.id = `t-${i}`;
+            t.onmousedown = () => clickTable(i);
+            floor.appendChild(t);
+        }
+
+        function startKitchenRush(difficulty) {
+            currentDifficulty = difficulty;
+            score = 0; lives = 3; combo = 1;
+            isPlaying = true;
+            
+            // Apply Difficulty Settings
+            if (difficulty === 'easy') {
+                spawnRate = 1600;
+                patience = 4000;
+                misclickPenalty = false;
+                subtitleEl.innerText = "EASY MODE: Relaxed service pace.";
+                subtitleEl.style.color = "#4caf50";
+            } else if (difficulty === 'medium') {
+                spawnRate = 1200;
+                patience = 3200;
+                misclickPenalty = false;
+                subtitleEl.innerText = "MEDIUM MODE: Standard dinner rush.";
+                subtitleEl.style.color = "#ff9800";
+            } else if (difficulty === 'hard') {
+                spawnRate = 1000;
+                patience = 2800;
+                misclickPenalty = true;
+                subtitleEl.innerText = "HARD MODE: Misclicks cost lives!";
+                subtitleEl.style.color = "var(--angry)";
+            }
+            
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'none';
+            appWindow.classList.remove('rush-hour');
+            updateHUD();
+
+            for(let i=0; i<9; i++) {
+                clearTimeout(timers[i]);
+                resetTable(i);
+            }
+
+            clearInterval(spawnInterval);
+            gameLoop();
+        }
+
+        function gameLoop() {
+            if(!isPlaying) return;
+            spawnCustomer();
+            spawnInterval = setTimeout(gameLoop, spawnRate);
+        }
+
+        function spawnCustomer() {
+            let empty = [];
+            for(let i=0; i<9; i++) {
+                if(document.getElementById(`t-${i}`).className === 'table') empty.push(i);
+            }
+            if(empty.length === 0) return;
+
+            let spawns = 1;
+            
+            // Adjust multi-spawns based on difficulty
+            if (currentDifficulty === 'hard') {
+                if (score > 400 && Math.random() > 0.4) spawns = 3; 
+                else if (score > 150 && Math.random() > 0.3) spawns = 2; 
+            } else if (currentDifficulty === 'medium') {
+                if (score > 250 && Math.random() > 0.4) spawns = 2; 
+            }
+            // Easy stays at 1 spawn
+            
+            let vipThreshold = currentDifficulty === 'hard' ? 0.75 : (currentDifficulty === 'medium' ? 0.85 : 0.92);
+
+            for(let s=0; s<spawns; s++) {
+                if(empty.length === 0) break;
+                let id = empty.splice(Math.floor(Math.random() * empty.length), 1)[0];
+                let isVIP = Math.random() > vipThreshold; 
+                
+                let t = document.getElementById(`t-${id}`);
+                t.className = `table ${isVIP ? 'vip' : 'geofenced'}`;
+                t.innerHTML = isVIP ? '🌟' : '📍';
+
+                let currentPatience = isVIP ? patience * 0.6 : patience;
+                timers[id] = setTimeout(() => failTable(id), currentPatience);
+            }
+        }
+
+        function triggerGameOver() {
+            isPlaying = false;
+            clearTimeout(spawnInterval);
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('gameOverScreen').style.display = 'flex';
+            appWindow.classList.remove('rush-hour');
+        }
+
+        function clickTable(id) {
+            if(!isPlaying) return;
+            let t = document.getElementById(`t-${id}`);
+            
+            if(t.classList.contains('geofenced') || t.classList.contains('vip')) {
+                clearTimeout(timers[id]);
+                
+                let isVIP = t.classList.contains('vip');
+                let points = (isVIP ? 30 : 10) * combo;
+                score += points;
+                combo = Math.min(combo + 1, 5);
+                
+                // Scale difficulty
+                let scaleSpawn = currentDifficulty === 'hard' ? 25 : (currentDifficulty === 'medium' ? 15 : 5);
+                let scalePatience = currentDifficulty === 'hard' ? 40 : (currentDifficulty === 'medium' ? 20 : 10);
+                
+                let minSpawn = currentDifficulty === 'hard' ? 300 : (currentDifficulty === 'medium' ? 500 : 800);
+                let minPatience = currentDifficulty === 'hard' ? 800 : (currentDifficulty === 'medium' ? 1200 : 2000);
+
+                spawnRate = Math.max(spawnRate - scaleSpawn, minSpawn); 
+                patience = Math.max(patience - scalePatience, minPatience);  
+                
+                if(score > 150 && currentDifficulty !== 'easy' && !appWindow.classList.contains('rush-hour')) {
+                    appWindow.classList.add('rush-hour');
+                }
+
+                showFloatingText(`+${points}`, t);
+                updateHUD();
+
+                let randomPrep = prepIcons[Math.floor(Math.random() * prepIcons.length)];
+                let randomFood = foodIcons[Math.floor(Math.random() * foodIcons.length)];
+
+                t.className = 'table prepping';
+                t.innerHTML = randomPrep;
+                
+                setTimeout(() => {
+                    if(t.classList.contains('prepping')) {
+                        t.className = 'table dining';
+                        t.innerHTML = randomFood;
+                        setTimeout(() => resetTable(id), currentDifficulty === 'hard' ? 1200 : 1500); 
+                    }
+                }, 700);
+            } else if (t.className === 'table') {
+                if (misclickPenalty) {
+                    t.classList.add('error-click');
+                    setTimeout(() => t.classList.remove('error-click'), 300);
+                    
+                    combo = 1;
+                    lives--;
+                    updateHUD();
+                    showFloatingText("-1 ❤️ (MISCLICK)", t, 'var(--angry)');
+                    
+                    if (lives <= 0) triggerGameOver();
+                } else {
+                    // Just reset combo on easier difficulties
+                    combo = 1;
+                    updateHUD();
+                }
+            }
+        }
+
+        function failTable(id) {
+            if (!isPlaying) return;
+            
+            let t = document.getElementById(`t-${id}`);
+            t.className = 'table angry';
+            t.innerHTML = '😡';
+            combo = 1; 
+            lives--;
+            updateHUD();
+
+            showFloatingText("-1 ❤️", t, 'var(--angry)');
+
+            if(lives <= 0) {
+                triggerGameOver();
+            } else {
+                setTimeout(() => resetTable(id), 1000);
+            }
+        }
+
+        function resetTable(id) {
+            let t = document.getElementById(`t-${id}`);
+            t.className = 'table';
+            t.innerHTML = '';
+        }
+
+        function updateHUD() {
+            scoreEl.innerText = score;
+            livesEl.innerText = lives;
+            comboEl.innerText = `Combo x${combo}`;
+            comboEl.style.transform = `scale(${1 + (combo * 0.1)})`;
+            comboEl.style.color = combo === 5 ? '#ff5722' : '#ffd700';
+            setTimeout(() => comboEl.style.transform = 'scale(1)', 100);
+        }
+
+        function showFloatingText(msg, element, color = 'var(--primary-color)') {
+            let float = document.createElement('div');
+            float.className = 'floating-text';
+            float.innerText = msg;
+            float.style.color = color;
+            float.style.left = (element.offsetLeft + element.offsetWidth/2 - 40) + 'px';
+            float.style.top = (element.offsetTop) + 'px';
+            floor.appendChild(float);
+            setTimeout(() => float.remove(), 800);
+        }
+    </script>
+</body>
+</html>
